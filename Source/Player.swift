@@ -77,6 +77,7 @@ public protocol PlayerDelegate {
 
     func playerPlaybackWillStartFromBeginning(player: Player)
     func playerPlaybackDidEnd(player: Player)
+    func playerMutingDidChange(player: Player)
 }
 
 // KVO contexts
@@ -91,6 +92,7 @@ private let PlayerTracksKey = "tracks"
 private let PlayerPlayableKey = "playable"
 private let PlayerDurationKey = "duration"
 private let PlayerRateKey = "rate"
+private let PlayerMutedKey = "muted"
 
 // KVO player item keys
 
@@ -193,6 +195,7 @@ public class Player: UIViewController {
         self.player = AVPlayer()
         self.player.actionAtItemEnd = .Pause
         self.player.addObserver(self, forKeyPath: PlayerRateKey, options: (NSKeyValueObservingOptions.New | NSKeyValueObservingOptions.Old) , context: &PlayerObserverContext)
+        self.player.addObserver(self, forKeyPath: PlayerMutedKey, options: (NSKeyValueObservingOptions.New | NSKeyValueObservingOptions.Old) , context: &PlayerObserverContext)
 
         self.playbackLoops = false
         self.playbackFreezesAtEnd = false
@@ -217,6 +220,7 @@ public class Player: UIViewController {
         self.playerView?.layer.removeObserver(self, forKeyPath: PlayerReadyForDisplay, context: &PlayerLayerObserverContext)
 
         self.player.removeObserver(self, forKeyPath: PlayerRateKey, context: &PlayerObserverContext)
+        self.player.removeObserver(self, forKeyPath: PlayerMutedKey, context: &PlayerObserverContext)
 
         self.player.pause()
 
@@ -388,6 +392,8 @@ public class Player: UIViewController {
         switch (keyPath, context) {
             case (PlayerRateKey, &PlayerObserverContext):
                 true
+            case (PlayerMutedKey, &PlayerObserverContext):
+                self.delegate?.playerMutingDidChange(self)
             case (PlayerStatusKey, &PlayerItemObserverContext):
                 true
             case (PlayerKeepUp, &PlayerItemObserverContext):
